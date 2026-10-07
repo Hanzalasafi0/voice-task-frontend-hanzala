@@ -1,21 +1,41 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./App.css";
+
+function MicIcon() {
+  return (
+    <svg
+      className="mic-icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="8" y="3" width="8" height="12" rx="4" />
+      <path d="M5 11a7 7 0 0 0 14 0" />
+      <path d="M12 18v3" />
+      <path d="M8 21h8" />
+    </svg>
+  );
+}
 
 const initialTasks = [
   {
     id: 1,
-    title: "Complete DBMS assignment",
-    description: "",
+    title: "Complete React assignment",
+    description: "Finish the pending React practice questions.",
     scheduledDate: "Today",
-    scheduledTime: "7:00 PM",
+    scheduledTime: "10:00 AM",
     priority: "high",
     category: "study",
     status: "pending",
   },
   {
     id: 2,
-    title: "Go to gym",
-    description: "",
+    title: "Buy groceries",
+    description: "Milk, bread and fruits.",
     scheduledDate: "Today",
     scheduledTime: "6:00 PM",
     priority: "medium",
@@ -24,12 +44,12 @@ const initialTasks = [
   },
   {
     id: 3,
-    title: "Call project mentor",
-    description: "",
+    title: "Go for a cricket practice",
+    description: "Evening cricket practice.",
     scheduledDate: "Tomorrow",
-    scheduledTime: "10:00 AM",
-    priority: "medium",
-    category: "work",
+    scheduledTime: "5:00 PM",
+    priority: "low",
+    category: "health",
     status: "pending",
   },
 ];
@@ -38,73 +58,121 @@ function App() {
   const [tasks, setTasks] = useState(initialTasks);
 
   const [screen, setScreen] = useState("home");
-
   const [selectedTask, setSelectedTask] = useState(null);
 
   const [showTaskForm, setShowTaskForm] = useState(false);
-
   const [editingTask, setEditingTask] = useState(null);
+
+  const [showInstallHelp, setShowInstallHelp] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [isInstalled, setIsInstalled] = useState(false);
 
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    date: "",
-    time: "",
+    scheduledDate: "",
+    scheduledTime: "",
     priority: "medium",
     category: "general",
   });
 
-  const pendingTasks = tasks.filter(
-    (task) => task.status === "pending"
-  );
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (event) => {
+      event.preventDefault();
+      setDeferredPrompt(event);
+    };
 
-  const completedTasks = tasks.filter(
-    (task) => task.status === "completed"
-  );
+    const handleAppInstalled = () => {
+      setIsInstalled(true);
+      setDeferredPrompt(null);
+    };
+
+    if (
+      window.matchMedia &&
+      window.matchMedia("(display-mode: standalone)").matches
+    ) {
+      setIsInstalled(true);
+    }
+
+    window.addEventListener(
+      "beforeinstallprompt",
+      handleBeforeInstallPrompt
+    );
+
+    window.addEventListener("appinstalled", handleAppInstalled);
+
+    return () => {
+      window.removeEventListener(
+        "beforeinstallprompt",
+        handleBeforeInstallPrompt
+      );
+      window.removeEventListener("appinstalled", handleAppInstalled);
+    };
+  }, []);
+
+  const handleInstallApp = async () => {
+    if (!deferredPrompt) {
+      setShowInstallHelp(true);
+      return;
+    }
+
+    deferredPrompt.prompt();
+
+    try {
+      await deferredPrompt.userChoice;
+    } catch {
+      // Installation cancelled or unavailable.
+    }
+
+    setDeferredPrompt(null);
+  };
 
   const startVoiceFlow = () => {
     setScreen("recording");
   };
 
-  const finishRecording = () => {
+  const stopRecording = () => {
     setScreen("processing");
 
     setTimeout(() => {
       setSelectedTask({
-        title: "Go to gym",
-        description: "Gym session",
+        id: Date.now(),
+        title: "Complete my project work",
+        description: "Finish the remaining project tasks.",
         scheduledDate: "Today",
-        scheduledTime: "6:00 PM",
+        scheduledTime: "8:00 PM",
         priority: "medium",
-        category: "health",
+        category: "work",
+        status: "pending",
       });
 
       setScreen("confirmation");
-    }, 1800);
+    }, 1500);
   };
 
   const saveVoiceTask = () => {
     if (!selectedTask) return;
 
-    const newTask = {
-      id: Date.now(),
-      title: selectedTask.title,
-      description: selectedTask.description || "",
-      scheduledDate: selectedTask.scheduledDate,
-      scheduledTime: selectedTask.scheduledTime,
-      priority: selectedTask.priority,
-      category: selectedTask.category,
-      status: "pending",
-    };
+    setTasks((prev) => [
+      {
+        ...selectedTask,
+        id: Date.now(),
+      },
+      ...prev,
+    ]);
 
-    setTasks((currentTasks) => [newTask, ...currentTasks]);
+    setSelectedTask(null);
+    setScreen("home");
+  };
+
+  const cancelVoiceTask = () => {
     setSelectedTask(null);
     setScreen("home");
   };
 
   const toggleTask = (id) => {
-    setTasks((currentTasks) =>
-      currentTasks.map((task) =>
+    setTasks((prev) =>
+      prev.map((task) =>
         task.id === id
           ? {
               ...task,
@@ -119,9 +187,11 @@ function App() {
   };
 
   const deleteTask = (id) => {
-    setTasks((currentTasks) =>
-      currentTasks.filter((task) => task.id !== id)
-    );
+    setTasks((prev) => prev.filter((task) => task.id !== id));
+
+    if (selectedTask?.id === id) {
+      setSelectedTask(null);
+    }
   };
 
   const openAddTask = () => {
@@ -130,8 +200,8 @@ function App() {
     setFormData({
       title: "",
       description: "",
-      date: "",
-      time: "",
+      scheduledDate: "",
+      scheduledTime: "",
       priority: "medium",
       category: "general",
     });
@@ -143,15 +213,24 @@ function App() {
     setEditingTask(task);
 
     setFormData({
-      title: task.title,
+      title: task.title || "",
       description: task.description || "",
-      date: task.scheduledDate || "",
-      time: task.scheduledTime || "",
-      priority: task.priority,
-      category: task.category,
+      scheduledDate: task.scheduledDate || "",
+      scheduledTime: task.scheduledTime || "",
+      priority: task.priority || "medium",
+      category: task.category || "general",
     });
 
     setShowTaskForm(true);
+  };
+
+  const handleFormChange = (event) => {
+    const { name, value } = event.target;
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
   const saveManualTask = (event) => {
@@ -160,36 +239,24 @@ function App() {
     if (!formData.title.trim()) return;
 
     if (editingTask) {
-      setTasks((currentTasks) =>
-        currentTasks.map((task) =>
+      setTasks((prev) =>
+        prev.map((task) =>
           task.id === editingTask.id
             ? {
                 ...task,
-                title: formData.title,
-                description: formData.description,
-                scheduledDate: formData.date || "No date",
-                scheduledTime: formData.time || "",
-                priority: formData.priority,
-                category: formData.category,
+                ...formData,
               }
             : task
         )
       );
     } else {
-      const newTask = {
-        id: Date.now(),
-        title: formData.title,
-        description: formData.description,
-        scheduledDate: formData.date || "No date",
-        scheduledTime: formData.time || "",
-        priority: formData.priority,
-        category: formData.category,
-        status: "pending",
-      };
-
-      setTasks((currentTasks) => [
-        newTask,
-        ...currentTasks,
+      setTasks((prev) => [
+        {
+          id: Date.now(),
+          ...formData,
+          status: "pending",
+        },
+        ...prev,
       ]);
     }
 
@@ -197,221 +264,69 @@ function App() {
     setEditingTask(null);
   };
 
-  const getCategoryLabel = (category) => {
-    const labels = {
-      work: "Work",
-      study: "Study",
-      personal: "Personal",
-      health: "Health",
-      finance: "Finance",
-      general: "General",
-    };
+  const formatCategory = (category) => {
+    if (!category) return "General";
 
-    return labels[category] || "General";
+    return (
+      category.charAt(0).toUpperCase() +
+      category.slice(1)
+    );
   };
 
   const getPriorityLabel = (priority) => {
-    return (
-      priority.charAt(0).toUpperCase() +
-      priority.slice(1)
-    );
+    if (priority === "high") return "High";
+    if (priority === "low") return "Low";
+    return "Medium";
   };
 
-  /* =========================
-     CONFIRMATION
-  ========================= */
+  const getTaskCount = () => {
+    return tasks.filter((task) => task.status !== "completed").length;
+  };
 
-  if (screen === "confirmation" && selectedTask) {
-    return (
-      <div className="page">
-        <header className="simple-header">
-          <div className="brand">
-            <div className="brand-mark">V</div>
-            <span>VoiceTasks</span>
-          </div>
-        </header>
-
-        <main className="confirmation-content">
-          <div className="success-icon">✓</div>
-
-          <p className="eyebrow">Task ready</p>
-
-          <h2 className="confirmation-title">
-            Does this look right?
-          </h2>
-
-          <div className="confirmation-card">
-            <div className="confirmation-main">
-              <h3>{selectedTask.title}</h3>
-
-              {selectedTask.description && (
-                <p className="confirmation-description">
-                  {selectedTask.description}
-                </p>
-              )}
-            </div>
-
-            <div className="detail-list">
-              <div className="detail-row">
-                <span className="detail-icon">◷</span>
-                <div>
-                  <small>Date & time</small>
-                  <strong>
-                    {selectedTask.scheduledDate} ·{" "}
-                    {selectedTask.scheduledTime}
-                  </strong>
-                </div>
-              </div>
-
-              <div className="detail-row">
-                <span className="detail-icon">●</span>
-                <div>
-                  <small>Priority</small>
-                  <strong>
-                    {getPriorityLabel(
-                      selectedTask.priority
-                    )}
-                  </strong>
-                </div>
-              </div>
-
-              <div className="detail-row">
-                <span className="detail-icon">▦</span>
-                <div>
-                  <small>Category</small>
-                  <strong>
-                    {getCategoryLabel(
-                      selectedTask.category
-                    )}
-                  </strong>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="confirmation-actions">
-            <button
-              className="secondary-btn"
-              onClick={() => {
-                setScreen("home");
-                setSelectedTask(null);
-              }}
-            >
-              Cancel
-            </button>
-
-            <button
-              className="primary-btn"
-              onClick={saveVoiceTask}
-            >
-              Save task
-            </button>
-          </div>
-        </main>
-      </div>
-    );
-  }
-
-  /* =========================
-     PROCESSING
-  ========================= */
-
-  if (screen === "processing") {
-    return (
-      <div className="page centered-page">
-        <header className="simple-header">
-          <div className="brand">
-            <div className="brand-mark">V</div>
-            <span>VoiceTasks</span>
-          </div>
-        </header>
-
-        <main className="processing-content">
-          <div className="processing-circle">
-            <span>V</span>
-          </div>
-
-          <p className="eyebrow">
-            Understanding your voice
-          </p>
-
-          <h2>
-            Turning your words
-            <br />
-            into a task
-          </h2>
-
-          <div className="processing-text">
-            “Kal shaam 6 baje gym jana hai”
-          </div>
-
-          <div className="processing-dots">
-            <span></span>
-            <span></span>
-            <span></span>
-          </div>
-
-          <p className="muted-text">
-            Just a moment...
-          </p>
-        </main>
-      </div>
-    );
-  }
-
-  /* =========================
-     RECORDING
-  ========================= */
-
+  // RECORDING SCREEN
   if (screen === "recording") {
     return (
-      <div className="page">
-        <header className="simple-header recording-top">
-          <div className="brand">
-            <div className="brand-mark">V</div>
-            <span>VoiceTasks</span>
-          </div>
-
+      <div className="app">
+        <header className="simple-header">
           <button
-            className="icon-button"
+            className="back-button"
             onClick={() => setScreen("home")}
-            aria-label="Close recording"
           >
-            ×
+            ←
           </button>
+
+          <span>Voice Task</span>
+
+          <div className="header-spacer" />
         </header>
 
         <main className="recording-content">
-          <p className="eyebrow">Listening</p>
+          <p className="eyebrow">VOICE INPUT</p>
 
-          <div className="recording-circle">
-            <span>●</span>
+          <h2>Tell me what you need to do</h2>
+
+          <p className="screen-description">
+            Speak naturally. VoiceTasks will turn your
+            words into a task.
+          </p>
+
+          <div className="recording-visual">
+            <div className="recording-circle">
+              <MicIcon />
+            </div>
           </div>
 
-          <div className="voice-wave">
-            {Array.from({ length: 9 }).map(
-              (_, index) => (
-                <span key={index}></span>
-              )
-            )}
-          </div>
-
-          <div className="recording-time">
-            00:07
-          </div>
+          <p className="recording-status">
+            Listening...
+          </p>
 
           <div className="spoken-box">
-            <span className="quote-mark">“</span>
-
+            <span>You can say something like</span>
             <p>
-              Kal shaam 6 baje gym jana hai
+              "Remind me to complete my project
+              tomorrow at 5 PM."
             </p>
           </div>
-
-          <p className="muted-text recording-message">
-            Speak naturally. We'll turn your words
-            into a task.
-          </p>
 
           <div className="recording-actions">
             <button
@@ -423,7 +338,7 @@ function App() {
 
             <button
               className="primary-btn"
-              onClick={finishRecording}
+              onClick={stopRecording}
             >
               Done
             </button>
@@ -433,72 +348,182 @@ function App() {
     );
   }
 
-  /* =========================
-     HOME
-  ========================= */
+  // PROCESSING SCREEN
+  if (screen === "processing") {
+    return (
+      <div className="app">
+        <header className="simple-header">
+          <span>Voice Task</span>
+        </header>
 
+        <main className="processing-content">
+          <div className="processing-loader">
+            <div className="loader-dot" />
+            <div className="loader-dot" />
+            <div className="loader-dot" />
+          </div>
+
+          <p className="eyebrow">PROCESSING</p>
+
+          <h2>Creating your task...</h2>
+
+          <p className="screen-description">
+            We are understanding your voice input and
+            preparing the task details.
+          </p>
+        </main>
+      </div>
+    );
+  }
+
+  // CONFIRMATION SCREEN
+  if (screen === "confirmation") {
+    return (
+      <div className="app">
+        <header className="simple-header">
+          <button
+            className="back-button"
+            onClick={cancelVoiceTask}
+          >
+            ←
+          </button>
+
+          <span>Confirm Task</span>
+
+          <div className="header-spacer" />
+        </header>
+
+        <main className="confirmation-content">
+          <p className="eyebrow">TASK READY</p>
+
+          <h2>Does this look right?</h2>
+
+          {selectedTask && (
+            <div className="confirmation-card">
+              <div className="confirmation-top">
+                <span className="category-label">
+                  {formatCategory(selectedTask.category)}
+                </span>
+
+                <span
+                  className={`priority-tag priority-${selectedTask.priority}`}
+                >
+                  {getPriorityLabel(
+                    selectedTask.priority
+                  )}
+                </span>
+              </div>
+
+              <h3>{selectedTask.title}</h3>
+
+              <p>{selectedTask.description}</p>
+
+              <div className="confirmation-meta">
+                <span>
+                  📅 {selectedTask.scheduledDate}
+                </span>
+
+                <span>
+                  🕐 {selectedTask.scheduledTime}
+                </span>
+              </div>
+            </div>
+          )}
+
+          <div className="confirmation-actions">
+            <button
+              className="secondary-btn"
+              onClick={cancelVoiceTask}
+            >
+              Cancel
+            </button>
+
+            <button
+              className="primary-btn"
+              onClick={saveVoiceTask}
+            >
+              Save Task
+            </button>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // HOME SCREEN
   return (
-    <div className="app-shell">
+    <div className="app">
       <header className="header">
         <div className="brand">
           <div className="brand-mark">V</div>
           <h1>VoiceTasks</h1>
         </div>
 
-        <button className="menu-button">
-          <span></span>
-          <span></span>
-          <span></span>
-        </button>
+        <div className="header-actions">
+          {!isInstalled && (
+            <button
+              className="install-button"
+              onClick={handleInstallApp}
+            >
+              <span className="install-icon">↓</span>
+              <span>Install App</span>
+            </button>
+          )}
+        </div>
       </header>
 
       <main className="main">
         <section className="welcome">
-          <p className="greeting">Good evening</p>
+          <p className="eyebrow">YOUR DAY</p>
 
           <h2>
-            What do you need
+            What do you want
             <br />
             to get done?
           </h2>
+
+          <p className="task-count">
+            {getTaskCount()} tasks remaining
+          </p>
         </section>
 
-        <button
+        {/* TAP TO SPEAK CARD */}
+        <section
           className="voice-card"
           onClick={startVoiceFlow}
         >
           <div className="voice-mic">
-            <span>●</span>
+            <MicIcon />
           </div>
 
           <div className="voice-content">
             <strong>Tap to speak</strong>
 
             <span>
-              Tell me what you need to do
+              Tell me what you need to remember
             </span>
 
             <small>
-              Try “Kal 6 baje gym jana hai”
+              Voice input • Multiple languages supported
             </small>
           </div>
 
-          <span className="voice-arrow">→</span>
-        </button>
+          <div className="voice-arrow">→</div>
+        </section>
 
         <section className="tasks-section">
           <div className="section-heading">
             <div>
+              <p className="eyebrow">TASKS</p>
               <h3>Today</h3>
-              <p>Monday, 5 October</p>
             </div>
 
-            <span>
-              {pendingTasks.length}{" "}
-              {pendingTasks.length === 1
-                ? "task"
-                : "tasks"}
-            </span>
+            <button
+              className="text-button"
+              onClick={openAddTask}
+            >
+              + Add task
+            </button>
           </div>
 
           <div className="task-list">
@@ -506,11 +531,11 @@ function App() {
               <div className="empty-state">
                 <div className="empty-icon">✓</div>
 
-                <h3>No tasks yet</h3>
+                <h4>No tasks yet</h4>
 
                 <p>
-                  Add your first task using your
-                  voice or manually.
+                  Add your first task using voice or
+                  manually.
                 </p>
               </div>
             ) : (
@@ -529,13 +554,11 @@ function App() {
                         ? "checked"
                         : ""
                     }`}
-                    onClick={() =>
-                      toggleTask(task.id)
-                    }
+                    onClick={() => toggleTask(task.id)}
                     aria-label={
                       task.status === "completed"
-                        ? "Mark as pending"
-                        : "Mark as completed"
+                        ? "Mark task as pending"
+                        : "Mark task as completed"
                     }
                   >
                     {task.status === "completed"
@@ -546,36 +569,41 @@ function App() {
                   <div className="task-details">
                     <h4>{task.title}</h4>
 
-                    <p>
-                      {task.scheduledDate}
-                      {task.scheduledTime
-                        ? ` · ${task.scheduledTime}`
-                        : ""}
-                    </p>
+                    {task.description && (
+                      <p>{task.description}</p>
+                    )}
+
+                    <div className="task-meta">
+                      <span>
+                        {task.scheduledDate}
+                      </span>
+
+                      <span>
+                        {task.scheduledTime}
+                      </span>
+
+                      <span className="category-tag">
+                        {formatCategory(task.category)}
+                      </span>
+                    </div>
                   </div>
 
                   <span
-                    className={`priority-tag ${task.priority}`}
+                    className={`priority-tag priority-${task.priority}`}
                   >
-                    {getPriorityLabel(
-                      task.priority
-                    )}
+                    {getPriorityLabel(task.priority)}
                   </span>
 
                   <div className="task-actions">
                     <button
-                      onClick={() =>
-                        openEditTask(task)
-                      }
+                      onClick={() => openEditTask(task)}
                       aria-label="Edit task"
                     >
                       Edit
                     </button>
 
                     <button
-                      onClick={() =>
-                        deleteTask(task.id)
-                      }
+                      onClick={() => deleteTask(task.id)}
                       aria-label="Delete task"
                     >
                       Delete
@@ -585,56 +613,89 @@ function App() {
               ))
             )}
           </div>
-
-          <button
-            className="manual-add"
-            onClick={openAddTask}
-          >
-            <span>+</span>
-            Add task manually
-          </button>
         </section>
-
-        {completedTasks.length > 0 && (
-          <p className="completed-summary">
-            {completedTasks.length}{" "}
-            {completedTasks.length === 1
-              ? "task"
-              : "tasks"}{" "}
-            completed
-          </p>
-        )}
       </main>
 
+      {/* FOOTER NAVIGATION */}
       <nav className="bottom-nav">
         <button className="nav-item active">
           <span>✓</span>
           Tasks
         </button>
 
+        <button className="nav-item calendar-nav">
+          <span>□</span>
+          Calendar
+        </button>
+
+        {/* ONLY FOOTER MIC */}
         <button
           className="nav-add"
           onClick={startVoiceFlow}
           aria-label="Add task with voice"
         >
-          +
+          <MicIcon />
         </button>
 
-        <button className="nav-item">
-          <span>□</span>
-          Calendar
-        </button>
-
-        <button className="nav-item">
+        <button className="nav-item settings-nav">
           <span>⚙</span>
           Settings
         </button>
       </nav>
 
-      {/* =========================
-          ADD / EDIT MODAL
-      ========================= */}
+      {/* INSTALL HELP MODAL */}
+      {showInstallHelp && (
+        <div
+          className="modal-overlay install-overlay"
+          onMouseDown={() =>
+            setShowInstallHelp(false)
+          }
+        >
+          <div
+            className="install-help-card"
+            onMouseDown={(event) =>
+              event.stopPropagation()
+            }
+          >
+            <button
+              className="modal-close"
+              onClick={() =>
+                setShowInstallHelp(false)
+              }
+            >
+              ×
+            </button>
 
+            <div className="install-help-icon">
+              ↓
+            </div>
+
+            <p className="eyebrow">
+              INSTALL VOICETASKS
+            </p>
+
+            <h2>Add VoiceTasks to your device</h2>
+
+            <p>
+              If automatic installation is not
+              available, open your browser menu and
+              choose <strong>Install App</strong> or
+              <strong> Add to Home Screen</strong>.
+            </p>
+
+            <button
+              className="primary-btn install-help-button"
+              onClick={() =>
+                setShowInstallHelp(false)
+              }
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ADD / EDIT TASK MODAL */}
       {showTaskForm && (
         <div
           className="modal-overlay"
@@ -652,14 +713,14 @@ function App() {
               <div>
                 <p className="eyebrow">
                   {editingTask
-                    ? "Edit task"
-                    : "New task"}
+                    ? "EDIT TASK"
+                    : "NEW TASK"}
                 </p>
 
                 <h2>
                   {editingTask
-                    ? "Update your task"
-                    : "Add a task"}
+                    ? "Edit your task"
+                    : "Create a task"}
                 </h2>
               </div>
 
@@ -676,32 +737,25 @@ function App() {
             <form onSubmit={saveManualTask}>
               <label>
                 Task title
+
                 <input
                   type="text"
-                  placeholder="What needs to be done?"
+                  name="title"
                   value={formData.title}
-                  onChange={(event) =>
-                    setFormData({
-                      ...formData,
-                      title: event.target.value,
-                    })
-                  }
-                  autoFocus
+                  onChange={handleFormChange}
+                  placeholder="What needs to be done?"
+                  required
                 />
               </label>
 
               <label>
                 Description
+
                 <textarea
-                  placeholder="Add some details (optional)"
+                  name="description"
                   value={formData.description}
-                  onChange={(event) =>
-                    setFormData({
-                      ...formData,
-                      description:
-                        event.target.value,
-                    })
-                  }
+                  onChange={handleFormChange}
+                  placeholder="Add some details..."
                   rows="3"
                 />
               </label>
@@ -709,31 +763,25 @@ function App() {
               <div className="form-row">
                 <label>
                   Date
+
                   <input
                     type="text"
-                    placeholder="e.g. Today"
-                    value={formData.date}
-                    onChange={(event) =>
-                      setFormData({
-                        ...formData,
-                        date: event.target.value,
-                      })
-                    }
+                    name="scheduledDate"
+                    value={formData.scheduledDate}
+                    onChange={handleFormChange}
+                    placeholder="Today"
                   />
                 </label>
 
                 <label>
                   Time
+
                   <input
                     type="text"
-                    placeholder="e.g. 7:00 PM"
-                    value={formData.time}
-                    onChange={(event) =>
-                      setFormData({
-                        ...formData,
-                        time: event.target.value,
-                      })
-                    }
+                    name="scheduledTime"
+                    value={formData.scheduledTime}
+                    onChange={handleFormChange}
+                    placeholder="5:00 PM"
                   />
                 </label>
               </div>
@@ -741,22 +789,20 @@ function App() {
               <div className="form-row">
                 <label>
                   Priority
+
                   <select
+                    name="priority"
                     value={formData.priority}
-                    onChange={(event) =>
-                      setFormData({
-                        ...formData,
-                        priority:
-                          event.target.value,
-                      })
-                    }
+                    onChange={handleFormChange}
                   >
                     <option value="low">
                       Low
                     </option>
+
                     <option value="medium">
                       Medium
                     </option>
+
                     <option value="high">
                       High
                     </option>
@@ -765,28 +811,20 @@ function App() {
 
                 <label>
                   Category
+
                   <select
+                    name="category"
                     value={formData.category}
-                    onChange={(event) =>
-                      setFormData({
-                        ...formData,
-                        category:
-                          event.target.value,
-                      })
-                    }
-                  >
-                    <option value="general">
-                      General
-                    </option>
+                    onChange={handleFormChange}
+                    >
                     <option value="work">
                       Work
                     </option>
+
                     <option value="study">
                       Study
                     </option>
-                    <option value="personal">
-                      Personal
-                    </option>
+
                     <option value="personal">
                       Personal
                     </option>
@@ -798,6 +836,10 @@ function App() {
                     <option value="finance">
                       Finance
                     </option>
+
+                    <option value="general">
+                      General
+                    </option>
                   </select>
                 </label>
               </div>
@@ -806,10 +848,9 @@ function App() {
                 <button
                   type="button"
                   className="secondary-btn"
-                  onClick={() => {
-                    setShowTaskForm(false);
-                    setEditingTask(null);
-                  }}
+                  onClick={() =>
+                    setShowTaskForm(false)
+                  }
                 >
                   Cancel
                 </button>
@@ -819,8 +860,8 @@ function App() {
                   className="primary-btn"
                 >
                   {editingTask
-                    ? "Update task"
-                    : "Add task"}
+                    ? "Save Changes"
+                    : "Add Task"}
                 </button>
               </div>
             </form>

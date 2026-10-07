@@ -1365,3 +1365,316 @@ select:focus-visible {
     transition-duration: 0.01ms !important;
   }
 }
+v/* =========================================
+   FINAL VOICE MIC FIX
+   ========================================= */
+
+/* Tap to Speak mic - keep only the SVG */
+.voice-mic {
+  position: relative !important;
+  display: grid !important;
+  place-items: center !important;
+  overflow: hidden !important;
+}
+
+.voice-mic::before,
+.voice-mic::after {
+  content: none !important;
+  display: none !important;
+}
+
+.voice-mic .mic-icon {
+  position: relative !important;
+  z-index: 2 !important;
+  width: 24px !important;
+  height: 24px !important;
+  display: block !important;
+  opacity: 1 !important;
+}
+
+/* Footer mic - keep only the SVG */
+.nav-add {
+  position: relative !important;
+  display: grid !important;
+  place-items: center !important;
+  overflow: hidden !important;
+}
+
+.nav-add::before,
+.nav-add::after {
+  content: none !important;
+  display: none !important;
+}
+
+.nav-add .mic-icon {
+  position: relative !important;
+  z-index: 2 !important;
+  width: 22px !important;
+  height: 22px !important;
+  display: block !important;
+}
+/* =========================================
+   FINAL UI FIXES
+   ========================================= */
+
+/* ---------- RECORDING MIC ---------- */
+
+.recording-circle {
+  position: relative !important;
+  display: grid !important;
+  place-items: center !important;
+  overflow: hidden !important;
+}
+
+.recording-circle::before,
+.recording-circle::after {
+  content: none !important;
+  display: none !important;
+}
+
+.recording-circle .mic-icon {
+  position: relative !important;
+  z-index: 5 !important;
+  width: 38px !important;
+  height: 38px !important;
+  display: block !important;
+  margin: 0 !important;
+}
+
+
+/* ---------- CONFIRMATION TASK BOX ---------- */
+
+.confirmation-card {
+  width: 100% !important;
+  box-sizing: border-box !important;
+  padding: 24px !important;
+  margin: 28px 0 !important;
+  border-radius: 18px !important;
+  background: var(--card) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: var(--shadow-sm) !important;
+  text-align: left !important;
+}
+
+.confirmation-card h3 {
+  margin: 14px 0 8px !important;
+  padding: 0 !important;
+  color: var(--text) !important;
+  font-size: 21px !important;
+  line-height: 1.35 !important;
+}
+
+.confirmation-card > p {
+  margin: 0 0 18px !important;
+  padding: 0 !important;
+  color: var(--muted) !important;
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+}
+
+.confirmation-top {
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+}
+
+.confirmation-meta {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 10px !important;
+  padding-top: 14px !important;
+  border-top: 1px solid var(--border) !important;
+}
+
+.confirmation-meta span {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  color: var(--muted) !important;
+  font-size: 12px !important;
+}
+
+
+/* ---------- MOBILE ---------- */
+
+@media (max-width: 700px) {
+  .confirmation-content {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    padding-left: 18px !important;
+    padding-right: 18px !important;
+  }
+
+  .confirmation-card {
+    padding: 20px !important;
+    margin-top: 22px !important;
+  }
+
+  .confirmation-card h3 {
+    font-size: 19px !important;
+  }
+
+  .confirmation-top {
+    align-items: flex-start !important;
+  }
+}
+/* RECORDING SCREEN - SPACING FIX */
+
+.spoken-box {
+  margin-bottom: 32px !important;
+}
+
+.recording-actions {
+  margin-top: 8px !important;
+  gap: 14px !important;
+}
+
+.recording-actions button {
+  margin: 0 !important;
+}
+
+/* Mobile */
+@media (max-width: 700px) {
+  .spoken-box {
+    margin-bottom: 30px !important;
+  }
+
+  .recording-actions {
+    margin-top: 6px !important;
+    gap: 12px !important;
+  }
+}
+/* ================================
+   PREMIUM INSTALL APP BUTTON
+================================ */
+
+.install-button {
+  min-height: 42px !important;
+  padding: 0 15px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+
+  border: 1px solid #d6e1db !important;
+  border-radius: 12px !important;
+  background: #ffffff !important;
+
+  color: var(--primary) !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+
+  box-shadow: 0 4px 14px rgba(43, 41, 39, 0.06) !important;
+  transition: all 0.2s ease !important;
+}
+
+.install-button:hover {
+  background: var(--primary-light) !important;
+  border-color: #c5d6cd !important;
+  transform: translateY(-1px);
+  box-shadow: 0 7px 18px rgba(43, 41, 39, 0.09) !important;
+}
+
+.install-icon {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+
+  border-radius: 8px;
+  background: var(--primary-light);
+
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+
+/* ================================
+   PREMIUM ADD TASK BUTTON
+================================ */
+
+.text-button {
+  min-height: 42px !important;
+  padding: 0 15px !important;
+
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+
+  border: 1px solid #d6e1db !important;
+  border-radius: 12px !important;
+
+  background: #ffffff !important;
+  color: var(--primary) !important;
+
+  font-size: 12px !important;
+  font-weight: 750 !important;
+
+  box-shadow: 0 4px 14px rgba(43, 41, 39, 0.05) !important;
+  transition: all 0.2s ease !important;
+}
+
+.text-button:hover {
+  background: var(--primary-light) !important;
+  border-color: #c5d6cd !important;
+  transform: translateY(-1px);
+  box-shadow: 0 7px 18px rgba(43, 41, 39, 0.08) !important;
+}
+
+.text-button:active,
+.install-button:active {
+  transform: translateY(0);
+}
+/* ================================
+   PREMIUM BACK BUTTON
+================================ */
+
+.back-button {
+  width: 42px !important;
+  height: 42px !important;
+  padding: 0 !important;
+
+  display: grid !important;
+  place-items: center !important;
+
+  border: 1px solid #dfe6e2 !important;
+  border-radius: 12px !important;
+
+  background: #ffffff !important;
+  color: var(--text) !important;
+
+  font-size: 22px !important;
+  font-weight: 500 !important;
+  line-height: 1 !important;
+
+  box-shadow: 0 4px 14px rgba(43, 41, 39, 0.06) !important;
+
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease !important;
+}
+
+.back-button:hover {
+  background: var(--primary-light) !important;
+  border-color: #c8d8d0 !important;
+  color: var(--primary) !important;
+
+  transform: translateX(-2px);
+  box-shadow: 0 7px 18px rgba(43, 41, 39, 0.09) !important;
+}
+
+.back-button:active {
+  transform: translateX(0) scale(0.97);
+}
+
+.back-button:focus-visible {
+  outline: 3px solid rgba(74, 107, 93, 0.2) !important;
+  outline-offset: 2px;
+}
